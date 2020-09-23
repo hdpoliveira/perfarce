@@ -93,7 +93,7 @@ Five built-in commands are overridden:
            to time (e.g. path/foo and path/FOO are the same object).
 '''
 
-from mercurial import cmdutil, commands, context, copies, encoding, error, extensions, hg, node, peer, phases, scmutil, util, url
+from mercurial import cmdutil, commands, context, copies, encoding, error, extensions, hg, node, phases, scmutil, util, url
 from mercurial.node import hex, short
 from mercurial.i18n import _
 from mercurial.error import ConfigError
@@ -136,7 +136,7 @@ if registrar is not None:
 else:
     command = cmdutil.command(cmdtable)
 
-if tuple(util.version().split(".",2)) < ("4","6"):
+if tuple(util.version().split(b".",2)) < (b"4",b"6"):
     def revpairnodes(repo, rev):
         return scmutil.revpair(repo, rev)
 else:
@@ -148,16 +148,16 @@ else:
 def uisetup(ui):
     '''monkeypatch pull and push for p4:// support'''
 
-    extensions.wrapcommand(commands.table, 'pull', pull)
-    p = extensions.wrapcommand(commands.table, 'push', push)
-    p[1].append(('', 'submit', None, 'for p4:// destination submit new changelist to server'))
-    p[1].append(('', 'job', [], 'for p4:// destination set job id(s)'))
-    extensions.wrapcommand(commands.table, 'incoming', incoming)
-    extensions.wrapcommand(commands.table, 'outgoing', outgoing)
-    p = extensions.wrapcommand(commands.table, 'clone', clone)
-    p[1].append(('', 'startrev', '', 'for p4:// source set initial revisions for clone'))
-    p[1].append(('', 'encoding', '', 'for p4:// source set encoding used by server'))
-    hg.schemes['p4'] = p4repo
+    extensions.wrapcommand(commands.table, b'pull', pull)
+    p = extensions.wrapcommand(commands.table, b'push', push)
+    p[1].append((b'', b'submit', None, b'for p4:// destination submit new changelist to server'))
+    p[1].append((b'', b'job', [], b'for p4:// destination set job id(s)'))
+    extensions.wrapcommand(commands.table, b'incoming', incoming)
+    extensions.wrapcommand(commands.table, b'outgoing', outgoing)
+    p = extensions.wrapcommand(commands.table, b'clone', clone)
+    p[1].append((b'', b'startrev', b'', b'for p4:// source set initial revisions for clone'))
+    p[1].append((b'', b'encoding', b'', b'for p4:// source set encoding used by server'))
+    hg.schemes[b'p4'] = p4repo
 
 # --------------------------------------------------------------------------
 
@@ -413,7 +413,7 @@ class p4client(object):
         if self.encoding:
             try:
                 return text.decode(self.encoding).encode(encoding.encoding)
-            except LookupError, e:
+            except LookupError as e:
                 raise error.Abort("%s, please check your locale settings" % e)
         return text
 
@@ -423,7 +423,7 @@ class p4client(object):
         if self.encoding:
             try:
                 return text.decode(encoding.encoding).encode(self.encoding)
-            except LookupError, e:
+            except LookupError as e:
                 raise error.Abort("%s, please check your locale settings" % e)
         return text
 
@@ -889,7 +889,7 @@ class p4client(object):
                 contents = keywords.sub('$\\1$', contents)
 
             return mode, contents
-        except Exception, e:
+        except Exception as e:
             if self.ui.traceback:self.ui.traceback()
             raise error.Abort(_('file %s missing in p4 workspace') % entry[4])
 
@@ -898,7 +898,7 @@ class p4client(object):
     def tags(self):
         try:
             t = self.configint('perfarce', 'tags', -1)
-        except (ConfigError,ValueError),e:
+        except (ConfigError,ValueError) as e:
             t = -1
         if t<0 or t>2:
             t = self.ui.configbool('perfarce', 'tags', True)
@@ -968,7 +968,7 @@ class p4client(object):
         except p4notclient:
             if ui.traceback:ui.traceback()
             return True, original(ui, repo, *(source and [source] or []), **opts)
-        except p4badclient,e:
+        except p4badclient as e:
             if ui.traceback:ui.traceback()
             raise error.Abort(str(e))
 
@@ -1025,7 +1025,7 @@ class p4client(object):
         except p4notclient:
             if ui.traceback:ui.traceback()
             return True, original(ui, repo, *(dest and [dest] or []), **opts)
-        except p4badclient,e:
+        except p4badclient as e:
             raise error.Abort(str(e))
 
         p4rev, p4id = client.find(base=True, abort=not opts['force'])
@@ -1357,7 +1357,7 @@ def clone(original, ui, source, dest=None, **opts):
     except p4notclient:
         if ui.traceback:ui.traceback()
         return original(ui, source, dest, **opts)
-    except p4badclient,e:
+    except p4badclient as e:
         raise error.Abort(str(e))
 
     d = client.runone('info')
@@ -1430,9 +1430,9 @@ def clone(original, ui, source, dest=None, **opts):
 
 # --------------------------------------------------------------------------
 
-@command("p4unshelve",
+@command(b"p4unshelve",
          [  ],
-         'hg unshelve changelist...')
+         b'hg unshelve changelist...')
 def unshelve(ui, repo, changelist, **opts):
     '''Take shelved files and bring into current workspace.
     This is broken: shelved files are not diffed and merged properly.'''
@@ -1747,9 +1747,9 @@ def subrevcommon(mode, ui, repo, *changes, **opts):
     return client, changes
 
 
-@command("p4submit",
-         [ ('a', 'all', None, _('submit all changelists listed by p4pending')) ],
-         'hg p4submit [-a] changelist...')
+@command(b"p4submit",
+         [ (b'a', b'all', None, _(b'submit all changelists listed by p4pending')) ],
+         b'hg p4submit [-a] changelist...')
 def submit(ui, repo, *changes, **opts):
     'submit one or more changelists to the p4 depot.'
 
@@ -1761,9 +1761,9 @@ def submit(ui, repo, *changes, **opts):
         client.submit(c)
 
 
-@command("p4revert",
-         [ ('a', 'all', None, _('revert all changelists listed by p4pending')) ],
-         'hg p4revert [-a] changelist...')
+@command(b"p4revert",
+         [ (b'a', b'all', None, _(b'revert all changelists listed by p4pending')) ],
+         b'hg p4revert [-a] changelist...')
 def revert(ui, repo, *changes, **opts):
     'revert one or more pending changelists and all opened files.'
 
@@ -1773,7 +1773,7 @@ def revert(ui, repo, *changes, **opts):
         ui.status(_('reverting: %d\n') % c)
         try:
             cl = client.describe(c)
-        except Exception,e:
+        except Exception as e:
             if ui.traceback:ui.traceback()
             ui.warn('%s\n' % e)
             cl = None
@@ -1792,9 +1792,9 @@ def revert(ui, repo, *changes, **opts):
             client.runs('change -d %d' %c , client=cl.client, abort=False)
 
 
-@command("p4pending",
-         [ ('s', 'summary', None, _('print p4 changelist summary')) ],
-            'hg p4pending [-s] [p4://server/client]')
+@command(b"p4pending",
+         [ (b's', b'summary', None, _(b'print p4 changelist summary')) ],
+            b'hg p4pending [-s] [p4://server/client]')
 def pending(ui, repo, dest=None, **opts):
     'report changelists already pushed and pending for submit in p4'
 
@@ -1832,15 +1832,15 @@ def pending(ui, repo, dest=None, **opts):
                 ui.write("%s\n" % ' '.join(output))
 
 
-@command("p4identify",
-         [ ('b', 'base', None, _('show base revision for new incoming changes')),
-           ('c', 'changelist', 0, _('identify the specified p4 changelist')),
-           ('i', 'id',   None, _('show global revision id')),
-           ('n', 'num',  None, _('show local revision number')),
-           ('p', 'p4',   None, _('show p4 revision number')),
-           ('r', 'rev',  '',   _('identify the specified revision')),
+@command(b"p4identify",
+         [ (b'b', b'base', None, _(b'show base revision for new incoming changes')),
+           (b'c', b'changelist', 0, _(b'identify the specified p4 changelist')),
+           (b'i', b'id',   None, _(b'show global revision id')),
+           (b'n', b'num',  None, _(b'show local revision number')),
+           (b'p', b'p4',   None, _(b'show p4 revision number')),
+           (b'r', b'rev',  b'',   _(b'identify the specified revision')),
          ],
-         'hg p4identify [-binp] [-r REV]')
+         b'hg p4identify [-binp] [-r REV]')
 def identify(ui, repo, *args, **opts):
     '''show p4 and hg revisions for the most recent p4 changelist
 
@@ -1886,12 +1886,12 @@ if registrar is not None:
     keywords = {}
     templatekeyword = registrar.templatekeyword(keywords)
 
-    @templatekeyword('p4')
+    @templatekeyword(b'p4')
     def showp4cl(repo, ctx, templ, **args):
         """String. p4 changelist number."""
         return ctx.extra().get("p4")
 
-    @templatekeyword('p4jobs')
+    @templatekeyword(b'p4jobs')
     def showp4jobs(repo, ctx, templ, **args):
         """String. A list of p4 jobs."""
         return ctx.extra().get("p4jobs")
